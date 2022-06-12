@@ -100,11 +100,11 @@ ORDER BY Grade DESC, Name ASC, Marks ASC
 
 """
 Clean Solution:
-Comment: I missed the Join first time, as I was unaware of NonEqui joins
+Comment: I missed the Join first time, as I was unaware of Non-Equi Joins
 """
 SELECT IF(Grade < 8, NULL, Name), Grade, Marks
 FROM Students 
-CROSS JOIN Grades
+INNER JOIN Grades
 WHERE Marks BETWEEN Min_Mark AND Max_Mark
 ORDER BY Grade DESC, Name ASC, Marks ASC
 
