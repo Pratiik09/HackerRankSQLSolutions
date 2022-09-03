@@ -33,3 +33,48 @@ HAVING FTS<>0 AND FTAS<>0 AND FTV<>0 AND FTUV<>0
 ORDER BY C.contest_id
 
 
+-- 15 Days of Learning SQL --
+WITH HackerWhoDidMaxSubThatDay AS (
+    SELECT submission_date, hacker_id,
+    RANK() OVER( PARTITION BY submission_date ORDER BY SubCount DESC, hacker_id ASC ) RN
+    FROM (
+        SELECT submission_date, hacker_id, COUNT(1) SubCount
+        FROM Submissions
+        GROUP BY submission_date, hacker_id
+    ) GetSubCount
+),
+DayCounter AS (
+    SELECT submission_date, hacker_id,
+    DENSE_RANK() OVER( ORDER BY submission_date ) DayIte
+    FROM Submissions
+),
+ConsistentChecker AS (
+    SELECT submission_date, hacker_id, DayIte,
+    CASE
+        WHEN submission_date = '2016-03-01' THEN 1
+        ELSE 1+(SELECT COUNT(DISTINCT submission_date)
+                FROM Submissions S1
+                WHERE S1.hacker_id = DC.hacker_id
+                AND S1.submission_date < DC.submission_date            
+        ) END Regularity
+    FROM DayCounter DC
+),
+SubmittedEachDay AS (
+    SELECT submission_date,
+           COUNT(DISTINCT hacker_id) RegularCnt
+    FROM ConsistentChecker
+    WHERE DayIte = Regularity
+    GROUP BY submission_date   
+)
+SELECT
+    SED.submission_date,
+    SED.RegularCnt,
+    MSTD.hacker_id,
+    H.name
+FROM SubmittedEachDay SED
+INNER JOIN HackerWhoDidMaxSubThatDay MSTD
+ON SED.submission_date = MSTD.submission_date
+INNER JOIN Hackers H
+ON MSTD.hacker_id = H.hacker_id
+WHERE MSTD.RN = 1
+ORDER BY submission_date
